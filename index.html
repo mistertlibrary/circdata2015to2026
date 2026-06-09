@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>West Essex Regional High School Library — Circulation Report 2015–2025</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  /* ── Reset & variables ────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --red:    #CC1B27;
+    --red-lt: #E83340;
+    --black:  #111111;
+    --mid:    #555555;
+    --rule:   #CCCCCC;
+    --bg:     #FFFFFF;
+    --bg-off: #F5F4F2;
+
+    --fiction:   #CC1B27;
+    --nonfic:    #2C3E50;
+    --bio:       #C17F24;
+    --graphic:   #2A7F6F;
+    --other:     #C8C5BE;
+
+    /* category palette for stacked — all seven + Other */
+    --c1: #CC1B27;
+    --c2: #2C3E50;
+    --c3: #C17F24;
+    --c4: #2A7F6F;
+    --c5: #7B5EA7;
+    --c6: #C8C5BE;
+    --c7: #E0DDD6;
+    --c8: #F0EDE8;
+
+    --font-display: 'Barlow Condensed', sans-serif;
+    --font-body:    'Source Sans 3', sans-serif;
+
+    --page-w: 816px;   /* 8.5in at 96dpi */
+    --page-h: 1056px;  /* 11in  at 96dpi */
+    --margin: 56px;
+  }
+
+  html, body {
+    background: #E8E6E0;
+    font-family: var(--font-body);
+    color: var(--black);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ── Page shell ───────────────────────────────────────── */
+  .page {
+    width: var(--page-w);
+    min-height: var(--page-h);
+    background: var(--bg);
+    margin: 2rem auto;
+    padding: var(--margin);
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── Header (shared) ──────────────────────────────────── */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--black);
+    padding-bottom: 14px;
+    margin-bottom: 28px;
+  }
+  .page-header .kicker {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--red);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .page-header h1 {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.05;
+    color: var(--black);
+    text-transform: uppercase;
+    letter-spacing: .01em;
+  }
+  .page-header .meta {
+    text-align: right;
+    font-size: 11px;
+    color: var(--mid);
+    line-height: 1.6;
+    font-weight: 300;
+  }
+  .page-header .meta strong {
+    font-weight: 600;
+    color: var(--black);
+    display: block;
+  }
+
+  /* ── Section labels ───────────────────────────────────── */
+  .panel-label {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 6px;
+  }
+  .panel-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    color: var(--black);
+    margin-bottom: 6px;
+    line-height: 1.1;
+  }
+  .panel-sub {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--mid);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  /* ── Stat row ─────────────────────────────────────────── */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border: 1px solid var(--rule);
+    margin-bottom: 24px;
+  }
+  .stat-cell {
+    padding: 14px 16px;
+    border-right: 1px solid var(--rule);
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-cell .s-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--mid);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .stat-cell .s-value {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--black);
+    line-height: 1;
+    display: block;
+  }
+  .stat-cell .s-note {
+    font-size: 10px;
+    color: var(--mid);
+    margin-top: 3px;
+    font-weight: 300;
+  }
+  .stat-cell.accent .s-value { color: var(--red); }
+
+  /* ── Chart containers ─────────────────────────────────── */
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+  }
+
+  /* ── Annotation badges ────────────────────────────────── */
+  .annotation-row {
+    display: flex;
+    gap: 16px;
+    margin-top: 14px;
+  }
+  .ann {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--mid);
+    line-height: 1.45;
+  }
+  .ann-mark {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--black);
+    color: white;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+  .ann-mark.red { background: var(--red); }
+
+  /* ── Legend ───────────────────────────────────────────── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    margin-bottom: 14px;
+  }
+  .leg-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--mid);
+    font-weight: 400;
+  }
+  .leg-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 1px;
+    flex-shrink: 0;
+  }
+
+  /* ── Small multiples grid ─────────────────────────────── */
+  .multiples-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .multiple-panel {
+    background: var(--bg-off);
+    padding: 16px 18px 14px;
+    position: relative;
+  }
+  .multiple-panel .m-label {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--black);
+    margin-bottom: 2px;
+  }
+  .multiple-panel .m-peak {
+    font-size: 10px;
+    color: var(--mid);
+    font-weight: 300;
+    margin-bottom: 10px;
+  }
+  .multiple-panel .chart-wrap { height: 130px; }
+
+  /* ── Footer ───────────────────────────────────────────── */
+  .page-footer {
+    position: absolute;
+    bottom: var(--margin);
+    left: var(--margin);
+    right: var(--margin);
+    border-top: 1px solid var(--rule);
+    padding-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #AAAAAA;
+    font-weight: 300;
+  }
+
+  /* ── Head-to-head divider ─────────────────────────────── */
+  .hth-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-bottom: 20px;
+  }
+  .hth-cell {
+    background: var(--bg);
+    padding: 14px 18px;
+  }
+  .hth-cell .h-cat {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+  .hth-cell .h-total {
+    font-family: var(--font-display);
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1;
+    margin: 2px 0;
+  }
+  .hth-cell .h-sub { font-size: 10px; color: var(--mid); font-weight: 300; }
+  .fiction-accent { color: var(--red); }
+  .nonfic-accent  { color: var(--black); }
+
+  /* ── Print ────────────────────────────────────────────── */
+  @media print {
+    html, body { background: white; }
+    .page {
+      margin: 0;
+      width: 8.5in;
+      min-height: 11in;
+      padding: 0.6in;
+      page-break-after: always;
+      box-shadow: none;
+    }
+    .page:last-child { page-break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE 1 — ANNUAL OVERVIEW
+═══════════════════════════════════════════════════════ -->
+<section class="page" id="page1">
+  <header class="page-header">
+    <div>
+      <span class="kicker">West Essex Regional High School Library</span>
+      <h1>Circulation Report<br>2015 – 2025</h1>
+    </div>
+    <div class="meta">
+      <strong>Panel 1 of 4</strong>
+      Annual Checkouts Overview<br>
+      Books only · Audiobooks excluded<br>
+      Data through 05/29/2026
+    </div>
+  </header>
+
+  <p class="panel-label">Overview</p>
+  <p class="panel-title">Annual Book Checkouts</p>
+  <p class="panel-sub">Books only · Audiobooks and eBooks excluded</p>
+
+  <div class="stat-row">
+    <div class="stat-cell accent">
+      <span class="s-label">Total checkouts</span>
+      <span class="s-value">11,858</span>
+      <span class="s-note">Books only, 2015–2025</span>
+    </div>
+    <div class="stat-cell">
+      <span class="s-label">Peak year</span>
+      <span class="s-value">1,939</span>
+      <span class="s-note">2018</span>
+    </div>
+    <div class="stat-cell">
+      <span class="s-label">2020 checkouts ⚑</span>
+      <span class="s-value">279</span>
+      <span class="s-note">2019: 1,197 · 2021: 958</span>
+    </div>
+    <div class="stat-cell">
+      <span class="s-label">2024 total</span>
+      <span class="s-value">810</span>
+      <span class="s-note">Most recent complete year</span>
+    </div>
+  </div>
+
+  <div class="chart-wrap" style="height:380px;">
+    <canvas id="chart1"></canvas>
+  </div>
+
+  <div class="annotation-row" style="margin-top:18px;">
+    <div class="ann">
+      <div class="ann-mark">⚑</div>
+      <div><strong style="color:var(--black);">2025:</strong> Report generated 05/29/2026. Year not yet closed; total will increase.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE 2 — STACKED COMPOSITION
+═══════════════════════════════════════════════════════ -->
+<section class="page" id="page2">
+  <header class="page-header">
+    <div>
+      <span class="kicker">West Essex Regional High School Library</span>
+      <h1>Circulation Report<br>2015 – 2025</h1>
+    </div>
+    <div class="meta">
+      <strong>Panel 2 of 4</strong>
+      Category Composition by Year<br>
+      Books only · Audiobooks excluded<br>
+      Data through 05/29/2026
+    </div>
+  </header>
+
+  <p class="panel-label">Composition</p>
+  <p class="panel-title">Checkouts by Category</p>
+  <p class="panel-sub">Books only · Audiobooks and eBooks excluded</p>
+
+  <div class="legend" id="legend2"></div>
+
+  <div class="chart-wrap" style="height:430px;">
+    <canvas id="chart2"></canvas>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE 3 — FICTION VS. NON-FICTION
+═══════════════════════════════════════════════════════ -->
+<section class="page" id="page3">
+  <header class="page-header">
+    <div>
+      <span class="kicker">West Essex Regional High School Library</span>
+      <h1>Circulation Report<br>2015 – 2025</h1>
+    </div>
+    <div class="meta">
+      <strong>Panel 3 of 4</strong>
+      Fiction vs. Non-Fiction<br>
+      Books only · Audiobooks excluded<br>
+      Data through 05/29/2026
+    </div>
+  </header>
+
+  <p class="panel-label">Head-to-Head</p>
+  <p class="panel-title">Fiction vs. Non-Fiction</p>
+  <p class="panel-sub">Books only · Audiobooks and eBooks excluded</p>
+
+  <div class="hth-grid">
+    <div class="hth-cell">
+      <div class="h-cat fiction-accent">Fiction</div>
+      <div class="h-total fiction-accent">5,353</div>
+      <div class="h-sub">Total checkouts 2015–2025</div>
+    </div>
+    <div class="hth-cell">
+      <div class="h-cat nonfic-accent">Non-Fiction</div>
+      <div class="h-total nonfic-accent">4,320</div>
+      <div class="h-sub">Total checkouts 2015–2025</div>
+    </div>
+  </div>
+
+  <div class="chart-wrap" style="height:330px;">
+    <canvas id="chart3"></canvas>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE 4 — SMALL MULTIPLES
+═══════════════════════════════════════════════════════ -->
+<section class="page" id="page4">
+  <header class="page-header">
+    <div>
+      <span class="kicker">West Essex Regional High School Library</span>
+      <h1>Circulation Report<br>2015 – 2025</h1>
+    </div>
+    <div class="meta">
+      <strong>Panel 4 of 4</strong>
+      Category Trends<br>
+      Books only · Audiobooks excluded<br>
+      Data through 05/29/2026
+    </div>
+  </header>
+
+  <p class="panel-label">Category Trends</p>
+  <p class="panel-title">Four Categories, Eleven Years</p>
+  <p class="panel-sub">Each panel scaled independently · For cross-category volume comparison see Panels 1 and 2</p>
+
+  <div class="multiples-grid">
+    <div class="multiple-panel">
+      <div class="m-label">Fiction</div>
+      <div class="m-peak" id="mp-fiction"></div>
+      <div class="chart-wrap"><canvas id="sm1"></canvas></div>
+    </div>
+    <div class="multiple-panel">
+      <div class="m-label">Non-Fiction</div>
+      <div class="m-peak" id="mp-nonfic"></div>
+      <div class="chart-wrap"><canvas id="sm2"></canvas></div>
+    </div>
+    <div class="multiple-panel">
+      <div class="m-label">Biography</div>
+      <div class="m-peak" id="mp-bio"></div>
+      <div class="chart-wrap"><canvas id="sm3"></canvas></div>
+    </div>
+    <div class="multiple-panel">
+      <div class="m-label">Graphic Novel</div>
+      <div class="m-peak" id="mp-graphic"></div>
+      <div class="chart-wrap"><canvas id="sm4"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE 5 — CATEGORY TOTALS + PROPORTIONAL BREAKDOWN
+═══════════════════════════════════════════════════════ -->
+<section class="page" id="page5">
+  <header class="page-header">
+    <div>
+      <span class="kicker">West Essex Regional High School Library</span>
+      <h1>Circulation Report<br>2015 – 2025</h1>
+    </div>
+    <div class="meta">
+      <strong>Panel 5 of 5</strong>
+      Category Totals &amp; Proportions<br>
+      Books only · Audiobooks and eBooks excluded<br>
+      Data through 05/29/2026
+    </div>
+  </header>
+
+  <!-- 5A: Horizontal ranking bar -->
+  <p class="panel-label">11-Year Totals</p>
+  <p class="panel-title">Checkouts by Category, 2015–2025</p>
+  <p class="panel-sub">Books only · Audiobooks and eBooks excluded</p>
+
+  <div class="chart-wrap" style="height:220px; margin-bottom:32px;">
+    <canvas id="chart5a"></canvas>
+  </div>
+
+  <!-- 5B: Percent-stacked -->
+  <p class="panel-label">Proportional Breakdown</p>
+  <p class="panel-title">Share of Annual Checkouts by Category</p>
+  <p class="panel-sub">Books only · Audiobooks and eBooks excluded · Short Stories, Graphic Biography, Vintage Biography, and Other collapsed into "Other"</p>
+
+  <div class="legend" id="legend5b" style="margin-bottom:12px;"></div>
+
+  <div class="chart-wrap" style="height:300px;">
+    <canvas id="chart5b"></canvas>
+  </div>
+
+</section>
+
+
+<script>
+/* ── Data ──────────────────────────────────────────────── */
+const YEARS = ['2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'];
+const ANOMALOUS = [5, 10]; // indices of 2020, 2025
+
+const DATA = {
+  Fiction:            [679, 606, 533, 968, 590, 133, 472, 457, 377, 292, 246],
+  'Non-Fiction':      [626, 608, 513, 589, 321, 100, 313, 409, 224, 392, 225],
+  Biography:          [151, 168, 139, 171,  82,  16,  46,  51,  34,  36,  41],
+  'Graphic Novel':    [188,  28,  23, 174, 192,  20, 115, 122,  42,  80,  80],
+  'Short Stories':    [ 19,   8,  10,  17,   8,   4,   8,  10,   8,  10,   3],
+  'Graphic Biography':[  5,   8,   6,  19,   3,   6,   4,   5,   0,   0,   1],
+  'Vintage Biography':[  5,   6,   5,   1,   0,   0,   0,   0,   0,   0,   0],
+  'Other':            [  1,   4,   0,   0,   1,   0,   0,   1,   0,   0,   0],
+};
+
+const bookYearTotals = YEARS.map((_,i) =>
+  Object.values(DATA).reduce((s,arr) => s+arr[i], 0)
+);
+
+const PALETTE = {
+  Fiction:            '#CC1B27',
+  'Non-Fiction':      '#111111',
+  Biography:          '#888880',
+  'Graphic Novel':    '#C0392B',
+  'Short Stories':    '#AAAAAA',
+  'Graphic Biography':'#CCCCCC',
+  'Vintage Biography':'#E0DDD6',
+};
+
+/* ── Helpers ───────────────────────────────────────────── */
+const RED   = '#CC1B27';
+const BLACK = '#111111';
+const GRAY  = '#CCCCCC';
+const MID   = '#888888';
+
+function anomalyPlugin(indices) {
+  return {
+    id: 'anomalyLines',
+    beforeDraw(chart) {
+      const { ctx, chartArea, scales } = chart;
+      if (!scales.x) return;
+      ctx.save();
+      indices.forEach(i => {
+        const x = scales.x.getPixelForTick(i);
+        ctx.beginPath();
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+        ctx.lineWidth = 1;
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+  };
+}
+
+const baseScales = (max) => ({
+  x: {
+    ticks: { font: { family: "'Source Sans 3', sans-serif", size: 10 }, color: MID, maxRotation: 0 },
+    grid: { display: false },
+  },
+  y: {
+    beginAtZero: true,
+    max: max,
+    ticks: { font: { family: "'Source Sans 3', sans-serif", size: 10 }, color: MID },
+    grid: { color: 'rgba(0,0,0,0.06)' },
+  }
+});
+
+/* ── Page 1: Annual bar ────────────────────────────────── */
+new Chart(document.getElementById('chart1'), {
+  type: 'bar',
+  plugins: [anomalyPlugin(ANOMALOUS)],
+  data: {
+    labels: YEARS,
+    datasets: [{
+      data: bookYearTotals,
+      backgroundColor: bookYearTotals.map((_,i) =>
+        ANOMALOUS.includes(i) ? 'rgba(204,27,39,0.25)' : RED
+      ),
+      borderColor: 'transparent',
+      borderRadius: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: i => `${i[0].label}${ANOMALOUS.includes(i[0].dataIndex) ? ' ⚑' : ''}`,
+          label: i => ` ${i.parsed.y.toLocaleString()} checkouts`
+        }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { font: { family: "'Source Sans 3',sans-serif", size: 11 }, color: MID },
+        grid: { display: false }
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { font: { family: "'Source Sans 3',sans-serif", size: 10 }, color: MID },
+        grid: { color: 'rgba(0,0,0,0.06)' }
+      }
+    }
+  }
+});
+
+/* ── Page 2: Stacked bar ───────────────────────────────── */
+const stackCats = ['Fiction','Non-Fiction','Biography','Graphic Novel','Short Stories','Graphic Biography','Vintage Biography','Other'];
+const stackColors = ['#CC1B27','#2C3E50','#C17F24','#2A7F6F','#7B5EA7','#AAAAAA','#D0CDD6','#E8E5E0'];
+
+const legend2El = document.getElementById('legend2');
+stackCats.forEach((c,i) => {
+  legend2El.innerHTML += `<div class="leg-item"><span class="leg-swatch" style="background:${stackColors[i]}"></span>${c}</div>`;
+});
+
+new Chart(document.getElementById('chart2'), {
+  type: 'bar',
+  plugins: [anomalyPlugin(ANOMALOUS)],
+  data: {
+    labels: YEARS,
+    datasets: stackCats.map((cat,i) => ({
+      label: cat,
+      data: DATA[cat],
+      backgroundColor: stackColors[i],
+      borderColor: 'transparent',
+      borderWidth: 0,
+      stack: 'stack'
+    }))
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        mode: 'index',
+        callbacks: {
+          title: i => `${i[0].label} — ${bookYearTotals[i[0].dataIndex].toLocaleString()} total`,
+          label: i => ` ${i.dataset.label}: ${i.parsed.y.toLocaleString()}`
+        }
+      }
+    },
+    scales: {
+      x: {
+        stacked: true,
+        ticks: { font: { family: "'Source Sans 3',sans-serif", size: 11 }, color: MID },
+        grid: { display: false }
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        ticks: { font: { family: "'Source Sans 3',sans-serif", size: 10 }, color: MID },
+        grid: { color: 'rgba(0,0,0,0.06)' }
+      }
+    }
+  }
+});
+
+/* ── Page 3: Fiction vs Non-Fiction ───────────────────── */
+new Chart(document.getElementById('chart3'), {
+  type: 'line',
+  plugins: [anomalyPlugin(ANOMALOUS)],
+  data: {
+    labels: YEARS,
+    datasets: [
+      {
+        label: 'Fiction',
+        data: DATA['Fiction'],
+        borderColor: '#CC1B27',
+        backgroundColor: 'rgba(204,27,39,0.08)',
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointBackgroundColor: '#CC1B27',
+        tension: 0.3,
+        fill: true
+      },
+      {
+        label: 'Non-Fiction',
+        data: DATA['Non-Fiction'],
+        borderColor: '#2C3E50',
+        backgroundColor: 'rgba(44,62,80,0.07)',
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointBackgroundColor: '#2C3E50',
+        tension: 0.3,
+        fill: true
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        align: 'end',
+        labels: {
+          font: { family: "'Source Sans 3',sans-serif", size: 11 },
+          color: MID,
+          boxWidth: 10,
+          boxHeight: 10,
+          padding: 16
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: i => ` ${i.dataset.label}: ${i.parsed.y.toLocaleString()}`
+        }
+      }
+    },
+    scales: baseScales(1050)
+  }
+});
+
+/* ── Page 4: Small multiples ──────────────────────────── */
+const smConfigs = [
+  { id:'sm1', cat:'Fiction',        color:'#CC1B27', elId:'mp-fiction' },
+  { id:'sm2', cat:'Non-Fiction',    color:'#2C3E50', elId:'mp-nonfic'  },
+  { id:'sm3', cat:'Biography',      color:'#C17F24', elId:'mp-bio'     },
+  { id:'sm4', cat:'Graphic Novel',  color:'#2A7F6F', elId:'mp-graphic' },
+];
+
+smConfigs.forEach(cfg => {
+  const vals = DATA[cfg.cat];
+  const total = vals.reduce((a,b)=>a+b,0);
+  const peak  = Math.max(...vals);
+  const peakYr = YEARS[vals.indexOf(peak)];
+  document.getElementById(cfg.elId).textContent =
+    `Peak: ${peak.toLocaleString()} (${peakYr})  ·  Total: ${total.toLocaleString()}`;
+
+  new Chart(document.getElementById(cfg.id), {
+    type: 'bar',
+    plugins: [anomalyPlugin(ANOMALOUS)],
+    data: {
+      labels: YEARS,
+      datasets: [{
+        data: vals,
+        backgroundColor: vals.map((_,i) =>
+          ANOMALOUS.includes(i) ? cfg.color + '44' : cfg.color
+        ),
+        borderColor: 'transparent',
+        borderRadius: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: i => ` ${i.parsed.y.toLocaleString()} checkouts` }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            font: { family: "'Source Sans 3',sans-serif", size: 9 },
+            color: MID, maxRotation: 45, minRotation: 45
+          },
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            font: { family: "'Source Sans 3',sans-serif", size: 9 },
+            color: MID,
+            maxTicksLimit: 5
+          },
+          grid: { color: 'rgba(0,0,0,0.06)' }
+        }
+      }
+    }
+  });
+});
+/* ── Page 5A: Horizontal category ranking ─────────────── */
+const CAT_COLORS = {
+  'Fiction':          '#CC1B27',
+  'Non-Fiction':      '#2C3E50',
+  'Biography':        '#C17F24',
+  'Graphic Novel':    '#2A7F6F',
+  'Short Stories':    '#7B5EA7',
+  'Graphic Biography':'#AAAAAA',
+  'Vintage Biography':'#D0CDD6',
+  'Other':            '#E8E5E0',
+};
+
+// Compute 11-year totals per category, sort descending
+const catTotals = Object.keys(CAT_COLORS).map(cat => ({
+  cat,
+  total: DATA[cat].reduce((a,b) => a+b, 0),
+  color: CAT_COLORS[cat],
+})).sort((a,b) => b.total - a.total);
+
+new Chart(document.getElementById('chart5a'), {
+  type: 'bar',
+  data: {
+    labels: catTotals.map(d => d.cat),
+    datasets: [{
+      data:            catTotals.map(d => d.total),
+      backgroundColor: catTotals.map(d => d.color),
+      borderColor:     'transparent',
+      borderRadius:    2,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: { label: i => ` ${i.parsed.x.toLocaleString()} checkouts` }
+      }
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        ticks: { font: { family: "'Source Sans 3',sans-serif", size: 10 }, color: MID },
+        grid:  { color: 'rgba(0,0,0,0.06)' }
+      },
+      y: {
+        ticks: { font: { family: "'Source Sans 3',sans-serif", size: 11 }, color: '#111111' },
+        grid:  { display: false }
+      }
+    }
+  }
+});
+
+/* ── Page 5B: Percent-stacked ──────────────────────────── */
+// Collapse minor categories into visual Other for the proportion chart
+const pctCats = [
+  { label: 'Fiction',      color: '#CC1B27', keys: ['Fiction'] },
+  { label: 'Non-Fiction',  color: '#2C3E50', keys: ['Non-Fiction'] },
+  { label: 'Biography',    color: '#C17F24', keys: ['Biography'] },
+  { label: 'Graphic Novel',color: '#2A7F6F', keys: ['Graphic Novel'] },
+  { label: 'Other',        color: '#C8C5BE', keys: ['Short Stories','Graphic Biography','Vintage Biography','Other'] },
+];
+
+const legend5bEl = document.getElementById('legend5b');
+pctCats.forEach(c => {
+  legend5bEl.innerHTML += `<div class="leg-item"><span class="leg-swatch" style="background:${c.color}"></span>${c.label}</div>`;
+});
+
+// Build percent datasets
+const pctDatasets = pctCats.map(c => {
+  const raw = YEARS.map((_,yi) =>
+    c.keys.reduce((s, key) => s + (DATA[key] ? DATA[key][yi] : 0), 0)
+  );
+  // Convert to percentages
+  const pct = raw.map((v, yi) => bookYearTotals[yi] > 0
+    ? parseFloat(((v / bookYearTotals[yi]) * 100).toFixed(2))
+    : 0
+  );
+  return {
+    label:           c.label,
+    data:            pct,
+    backgroundColor: c.color,
+    borderColor:     'transparent',
+    borderWidth:     0,
+    stack:           'stack',
+  };
+});
+
+new Chart(document.getElementById('chart5b'), {
+  type: 'bar',
+  plugins: [anomalyPlugin(ANOMALOUS)],
+  data: { labels: YEARS, datasets: pctDatasets },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        mode: 'index',
+        callbacks: {
+          title: i => `${i[0].label} — ${bookYearTotals[i[0].dataIndex].toLocaleString()} total checkouts`,
+          label: i => ` ${i.dataset.label}: ${i.parsed.y.toFixed(1)}%`
+        }
+      }
+    },
+    scales: {
+      x: {
+        stacked: true,
+        ticks: { font: { family: "'Source Sans 3',sans-serif", size: 11 }, color: MID },
+        grid:  { display: false }
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        max: 100,
+        ticks: {
+          font: { family: "'Source Sans 3',sans-serif", size: 10 },
+          color: MID,
+          callback: v => v + '%'
+        },
+        grid: { color: 'rgba(0,0,0,0.06)' }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
